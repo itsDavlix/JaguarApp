@@ -29,7 +29,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -222,25 +223,69 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // CONFIGURACIÓN DE PRIVACIDAD
+            // CONFIGURACIÓN DE PRIVACIDAD Y CONTRASEÑA
             Surface(
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Perfil Público", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("Permitir que otros usuarios vean tu información.", fontSize = 12.sp, color = Color.Gray)
+                Column {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (user.isPublic) "Perfil Público" else "Perfil Privado",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                text = if (user.isPublic) "Cualquiera puede iniciar sesión sin contraseña." 
+                                       else "Se requerirá contraseña para iniciar sesión.",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                        }
+                        Switch(
+                            checked = user.isPublic,
+                            onCheckedChange = { onUserChange(user.copy(isPublic = it)) }
+                        )
                     }
-                    Switch(
-                        checked = user.isPublic,
-                        onCheckedChange = { onUserChange(user.copy(isPublic = it)) }
-                    )
+
+                    // Mostrar campo de contraseña solo si el perfil es privado
+                    AnimatedVisibility(
+                        visible = !user.isPublic,
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut()
+                    ) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            var passwordVisible by remember { mutableStateOf(false) }
+                            OutlinedTextField(
+                                value = user.password,
+                                onValueChange = { onUserChange(user.copy(password = it)) },
+                                label = { Text("Establecer Contraseña") },
+                                placeholder = { Text("Ingresa una contraseña") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                singleLine = true,
+                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                                trailingIcon = {
+                                    val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                        Icon(imageVector = image, contentDescription = null)
+                                    }
+                                },
+                                supportingText = { Text("Obligatoria para perfiles privados") }
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
                 }
             }
 

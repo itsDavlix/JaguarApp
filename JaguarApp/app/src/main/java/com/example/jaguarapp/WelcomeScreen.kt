@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.window.Dialog
 
 @Composable
 fun WelcomeScreen(
@@ -40,6 +42,11 @@ fun WelcomeScreen(
     val imageUri = activeUser.imageUri
     var startAnimation by remember { mutableStateOf(false) }
     
+    // Estado para el diálogo de contraseña
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var passwordInput by remember { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf(false) }
+
     val alpha by animateFloatAsState(
         targetValue = if (startAnimation) 1f else 0f,
         animationSpec = tween(durationMillis = 1000),
@@ -169,7 +176,13 @@ fun WelcomeScreen(
 
             if (isUserRegistered) {
                 Button(
-                    onClick = onLogin,
+                    onClick = {
+                        if (!activeUser.isPublic) {
+                            showPasswordDialog = true
+                        } else {
+                            onLogin()
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
@@ -212,5 +225,59 @@ fun WelcomeScreen(
                 Text("GESTIÓN DE USUARIOS", fontWeight = FontWeight.Bold)
             }
         }
+    }
+
+    // Diálogo de Contraseña
+    if (showPasswordDialog) {
+        AlertDialog(
+            onDismissRequest = { 
+                showPasswordDialog = false
+                passwordInput = ""
+                passwordError = false
+            },
+            title = { Text("Seguridad de Perfil") },
+            text = {
+                Column {
+                    Text("Ingresa la contraseña para @${activeUser.alias}")
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = passwordInput,
+                        onValueChange = { 
+                            passwordInput = it
+                            passwordError = false
+                        },
+                        label = { Text("Contraseña") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = passwordError,
+                        supportingText = {
+                            if (passwordError) {
+                                Text("Contraseña incorrecta", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (passwordInput == activeUser.password) {
+                            showPasswordDialog = false
+                            passwordInput = ""
+                            onLogin()
+                        } else {
+                            passwordError = true
+                        }
+                    }
+                ) {
+                    Text("Entrar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPasswordDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }

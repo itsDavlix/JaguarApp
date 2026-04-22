@@ -10,5 +10,6 @@ data class User(
     val email: String = "",
     val bio: String = "",
     val isPublic: Boolean = true,
+    val password: String = "",
     val imageUri: Uri? = null
 )
