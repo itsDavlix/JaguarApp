@@ -25,7 +25,7 @@ import coil.compose.AsyncImage
 
 @Composable
 fun WelcomeScreen(
-    name: String,
+    alias: String,
     imageUri: Uri?,
     onNavigateToProfile: () -> Unit
 ) {
@@ -87,7 +87,7 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = if (name.isNotBlank()) "¡Bienvenido, $name!" else "¡Bienvenido, usuario!",
+                text = if (alias.isNotBlank()) "¡Bienvenido, $alias!" else "¡Bienvenido, usuario!",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.Center,

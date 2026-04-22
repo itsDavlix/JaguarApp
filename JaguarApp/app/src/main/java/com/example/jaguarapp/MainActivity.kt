@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
                 Crossfade(targetState = currentScreen, label = "ScreenTransition") { screen ->
                     when (screen) {
                         "welcome" -> WelcomeScreen(
-                            name = name,
+                            alias = alias,
                             imageUri = imageUri,
                             onNavigateToProfile = { currentScreen = "profile" }
                         )
