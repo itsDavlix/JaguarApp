@@ -1,12 +1,10 @@
 package com.example.jaguarapp
 
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,15 +13,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -35,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,53 +45,23 @@ fun ProfileScreen(
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
-    // ESTADOS (Manejan la interactividad)
+    val scope = rememberCoroutineScope()
     var isSaving by remember { mutableStateOf(false) }
     var showMessage by remember { mutableStateOf(false) }
     var displayedMessage by remember { mutableStateOf("") }
 
-    val scope = rememberCoroutineScope()
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
         onResult = { uri -> uri?.let { onUserChange(user.copy(imageUri = it)) } }
     )
 
-    // Animación de escala para la imagen de perfil al cambiar
-    val imageScale by animateFloatAsState(
-        targetValue = if (user.imageUri != null) 1.05f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "ImageScale"
-    )
-
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(title, fontWeight = FontWeight.ExtraBold) },
-                navigationIcon = {
-                    IconButton(onClick = onCancel) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { onThemeChange(!darkTheme) }) {
-                        AnimatedContent(
-                            targetState = darkTheme,
-                            transitionSpec = {
-                                fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
-                            },
-                            label = "ThemeIconTransition"
-                        ) { isDark ->
-                            Icon(
-                                imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                contentDescription = "Cambiar modo",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+            ProfileTopBar(
+                title = title,
+                darkTheme = darkTheme,
+                onBack = onCancel,
+                onThemeToggle = { onThemeChange(!darkTheme) }
             )
         }
     ) { padding ->
@@ -110,271 +76,274 @@ fun ProfileScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // MENSAJE ANIMADO
-            AnimatedVisibility(
-                visible = showMessage,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer 
-                    ),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = displayedMessage,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
+            SuccessMessage(visible = showMessage, message = displayedMessage)
 
-            // SECCIÓN DE IMAGEN DE PERFIL
-            Box(contentAlignment = Alignment.BottomEnd, modifier = Modifier.scale(imageScale)) {
-                Surface(
-                    modifier = Modifier
-                        .size(150.dp)
-                        .shadow(12.dp, CircleShape)
-                        .border(4.dp, MaterialTheme.colorScheme.primary, CircleShape),
-                    shape = CircleShape
-                ) {
-                    AsyncImage(
-                        model = user.imageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-                        contentDescription = "Foto de Perfil",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable {
-                                photoPickerLauncher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                )
-                            },
-                        contentScale = ContentScale.Crop,
-                        placeholder = painterResource(id = android.R.drawable.ic_menu_gallery),
-                        error = painterResource(id = android.R.drawable.ic_menu_report_image)
+            ProfileImageSection(
+                imageUri = user.imageUri,
+                onPickImage = {
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                     )
                 }
-                
-                // Botón Flotante de Cámara
-                SmallFloatingActionButton(
-                    onClick = { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    shape = CircleShape,
-                    modifier = Modifier.offset(x = (-4).dp, y = (-4).dp)
-                ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Cambiar foto", modifier = Modifier.size(20.dp))
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // CAMPOS DE ENTRADA
-            ProfileInputField(
-                value = user.name,
-                onValueChange = { onUserChange(user.copy(name = it)) },
-                label = "Nombre Completo",
-                icon = Icons.Default.Person
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProfileInputField(
-                value = user.alias,
-                onValueChange = { onUserChange(user.copy(alias = it)) },
-                label = "Alias / Nombre de usuario",
-                icon = Icons.Default.AlternateEmail
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ProfileInputField(
-                value = user.email,
-                onValueChange = { onUserChange(user.copy(email = it)) },
-                label = "Correo Electrónico",
-                icon = Icons.Default.Email
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = user.bio,
-                onValueChange = { if (it.length <= 150) onUserChange(user.copy(bio = it)) },
-                label = { Text("Biografía") },
-                placeholder = { Text("Cuéntanos algo sobre ti...") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                maxLines = 3,
-                supportingText = { Text("${user.bio.length}/150") },
-                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
-            )
+            ProfileFormFields(user, onUserChange)
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // CONFIGURACIÓN DE PRIVACIDAD Y CONTRASEÑA
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (user.isPublic) "Perfil Público" else "Perfil Privado",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                            Text(
-                                text = if (user.isPublic) "Cualquiera puede iniciar sesión sin contraseña." 
-                                       else "Se requerirá contraseña para iniciar sesión.",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
-                        }
-                        Switch(
-                            checked = user.isPublic,
-                            onCheckedChange = { onUserChange(user.copy(isPublic = it)) }
-                        )
-                    }
-
-                    // Mostrar campo de contraseña solo si el perfil es privado
-                    AnimatedVisibility(
-                        visible = !user.isPublic,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
-                            var passwordVisible by remember { mutableStateOf(false) }
-                            OutlinedTextField(
-                                value = user.password,
-                                onValueChange = { onUserChange(user.copy(password = it)) },
-                                label = { Text("Establecer Contraseña") },
-                                placeholder = { Text("Ingresa una contraseña") },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                singleLine = true,
-                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                                trailingIcon = {
-                                    val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                        Icon(imageVector = image, contentDescription = null)
-                                    }
-                                },
-                                supportingText = { Text("Obligatoria para perfiles privados") }
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-                }
-            }
+            PrivacySettingsSection(user, onUserChange)
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // BOTÓN DE ACCIÓN PRINCIPAL
-            val isFormValid = user.name.isNotBlank() && (user.isPublic || user.password.isNotBlank())
-            
-            Button(
-                onClick = {
-                    if (isFormValid) {
-                        scope.launch {
-                            isSaving = true
-                            delay(1500) // Simulación de red
-                            isSaving = false
-                            displayedMessage = "¡Perfil actualizado correctamente!"
-                            showMessage = true
-                            delay(2000)
-                            showMessage = false
-                            onSave() // Volver a la bienvenida después de guardar
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .shadow(if (!isSaving && isFormValid) 8.dp else 0.dp, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                enabled = !isSaving,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isFormValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
-                    contentColor = if (isFormValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
-                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
-                    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
-                )
-            ) {
-                AnimatedContent(targetState = isSaving, label = "ButtonContent") { saving ->
-                    if (saving) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 3.dp
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text("Guardando...", fontWeight = FontWeight.Bold)
-                        }
-                    } else {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Save,
-                                contentDescription = null,
-                                tint = if (isFormValid) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.6f)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "GUARDAR CAMBIOS",
-                                fontWeight = FontWeight.ExtraBold,
-                                letterSpacing = 1.sp,
-                                color = if (isFormValid) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.6f)
-                            )
-                        }
+            SaveButton(
+                user = user,
+                isSaving = isSaving,
+                onSave = {
+                    scope.launch {
+                        isSaving = true
+                        delay(1500)
+                        isSaving = false
+                        displayedMessage = "¡Perfil guardado correctamente!"
+                        showMessage = true
+                        delay(2000)
+                        showMessage = false
+                        onSave()
                     }
                 }
-            }
+            )
             
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileInputField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    icon: ImageVector
+private fun ProfileTopBar(
+    title: String,
+    darkTheme: Boolean,
+    onBack: () -> Unit,
+    onThemeToggle: () -> Unit
 ) {
+    CenterAlignedTopAppBar(
+        title = { Text(title, fontWeight = FontWeight.ExtraBold) },
+        navigationIcon = {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+            }
+        },
+        actions = {
+            IconButton(onClick = onThemeToggle) {
+                AnimatedContent(targetState = darkTheme, label = "ThemeToggle") { isDark ->
+                    Icon(
+                        imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun SuccessMessage(visible: Boolean, message: String) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically()
+    ) {
+        Card(
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
+        ) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(text = message, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileImageSection(imageUri: Any?, onPickImage: () -> Unit) {
+    val scale by animateFloatAsState(
+        targetValue = if (imageUri != null) 1.05f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "ImageScale"
+    )
+
+    Box(contentAlignment = Alignment.BottomEnd, modifier = Modifier.scale(scale)) {
+        Surface(
+            modifier = Modifier
+                .size(150.dp)
+                .shadow(12.dp, CircleShape)
+                .border(4.dp, MaterialTheme.colorScheme.primary, CircleShape),
+            shape = CircleShape
+        ) {
+            AsyncImage(
+                model = imageUri ?: User.DEFAULT_AVATAR,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().clickable { onPickImage() },
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = android.R.drawable.ic_menu_gallery)
+            )
+        }
+        SmallFloatingActionButton(
+            onClick = onPickImage,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            shape = CircleShape,
+            modifier = Modifier.offset(x = (-4).dp, y = (-4).dp)
+        ) {
+            Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun ProfileFormFields(user: User, onUserChange: (User) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ProfileInputField(
+            value = user.name,
+            onValueChange = { onUserChange(user.copy(name = it)) },
+            label = "Nombre Completo",
+            icon = Icons.Default.Person
+        )
+        ProfileInputField(
+            value = user.alias,
+            onValueChange = { onUserChange(user.copy(alias = it)) },
+            label = "Alias / Nombre de usuario",
+            icon = Icons.Default.AlternateEmail
+        )
+        ProfileInputField(
+            value = user.email,
+            onValueChange = { onUserChange(user.copy(email = it)) },
+            label = "Correo Electrónico",
+            icon = Icons.Default.Email
+        )
+        OutlinedTextField(
+            value = user.bio,
+            onValueChange = { if (it.length <= 150) onUserChange(user.copy(bio = it)) },
+            label = { Text("Biografía") },
+            placeholder = { Text("Cuéntanos algo sobre ti...") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            maxLines = 3,
+            supportingText = { Text("${user.bio.length}/150") },
+            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+        )
+    }
+}
+
+@Composable
+private fun PrivacySettingsSection(user: User, onUserChange: (User) -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (user.isPublic) "Perfil Público" else "Perfil Privado",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = if (user.isPublic) "Libre acceso sin contraseña." 
+                               else "Se requerirá contraseña para entrar.",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                }
+                Switch(checked = user.isPublic, onCheckedChange = { onUserChange(user.copy(isPublic = it)) })
+            }
+
+            AnimatedVisibility(
+                visible = !user.isPublic,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    var passwordVisible by remember { mutableStateOf(false) }
+                    OutlinedTextField(
+                        value = user.password,
+                        onValueChange = { onUserChange(user.copy(password = it)) },
+                        label = { Text("Establecer Contraseña") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true,
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+                        trailingIcon = {
+                            val icon = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) { Icon(icon, null) }
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SaveButton(user: User, isSaving: Boolean, onSave: () -> Unit) {
+    val isFormValid = user.isValid()
+    
+    Button(
+        onClick = onSave,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp)
+            .shadow(if (!isSaving && isFormValid) 8.dp else 0.dp, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        enabled = !isSaving,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isFormValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+            contentColor = if (isFormValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
+        )
+    ) {
+        AnimatedContent(targetState = isSaving, label = "SaveButtonContent") { saving ->
+            if (saving) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 3.dp)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("Guardando...", fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Save, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("GUARDAR CAMBIOS", fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ProfileInputField(value: String, onValueChange: (String) -> Unit, label: String, icon: ImageVector) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
-        leadingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+        leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        singleLine = true,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedBorderColor = MaterialTheme.colorScheme.outline
-        )
+        singleLine = true
     )
 }

@@ -8,11 +8,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,9 +20,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.filled.Add
 import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +34,6 @@ fun UserManagementScreen(
     onAddUser: () -> Unit,
     onBack: () -> Unit
 ) {
-    // Estados para el diálogo de contraseña
     var showPasswordDialog by remember { mutableStateOf(false) }
     var selectedUserForAction by remember { mutableStateOf<User?>(null) }
     var actionType by remember { mutableStateOf("") } // "edit" o "delete"
@@ -44,7 +43,7 @@ fun UserManagementScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Gestión de usuario", fontWeight = FontWeight.ExtraBold) },
+                title = { Text("Gestión de Usuarios", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -54,42 +53,16 @@ fun UserManagementScreen(
         }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Button(
-                    onClick = onAddUser,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(bottom = 8.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("NUEVO PERFIL", fontWeight = FontWeight.ExtraBold)
-                }
+                AddUserButton(onClick = onAddUser)
             }
 
             if (users.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 40.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("No hay usuarios registrados", color = Color.Gray)
-                    }
-                }
+                item { EmptyUsersPlaceholder() }
             } else {
                 items(users) { user ->
                     UserItem(
@@ -118,109 +91,83 @@ fun UserManagementScreen(
         }
     }
 
-    // Diálogo de Validación de Contraseña
     if (showPasswordDialog && selectedUserForAction != null) {
-        AlertDialog(
-            onDismissRequest = { 
+        ManagementPasswordDialog(
+            userAlias = selectedUserForAction?.alias ?: "",
+            correctPassword = selectedUserForAction?.password ?: "",
+            passwordInput = passwordInput,
+            passwordError = passwordError,
+            onPasswordChange = {
+                passwordInput = it
+                passwordError = false
+            },
+            onConfirm = {
+                val user = selectedUserForAction!!
+                showPasswordDialog = false
+                selectedUserForAction = null
+                passwordInput = ""
+                if (actionType == "edit") onUserClick(user) else onDeleteUser(user)
+            },
+            onError = { passwordError = true },
+            onDismiss = {
                 showPasswordDialog = false
                 selectedUserForAction = null
                 passwordInput = ""
                 passwordError = false
-            },
-            title = { Text("Acceso Protegido") },
-            text = {
-                Column {
-                    Text("Ingresa la contraseña para gestionar a @${selectedUserForAction?.alias}")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = passwordInput,
-                        onValueChange = { 
-                            passwordInput = it
-                            passwordError = false
-                        },
-                        label = { Text("Contraseña") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = passwordError,
-                        supportingText = {
-                            if (passwordError) {
-                                Text("Contraseña incorrecta", color = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (passwordInput == selectedUserForAction?.password) {
-                            val user = selectedUserForAction!!
-                            showPasswordDialog = false
-                            selectedUserForAction = null
-                            passwordInput = ""
-                            if (actionType == "edit") {
-                                onUserClick(user)
-                            } else if (actionType == "delete") {
-                                onDeleteUser(user)
-                            }
-                        } else {
-                            passwordError = true
-                        }
-                    }
-                ) {
-                    Text("Confirmar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { 
-                    showPasswordDialog = false
-                    selectedUserForAction = null
-                }) {
-                    Text("Cancelar")
-                }
             }
         )
     }
 }
 
 @Composable
-fun UserItem(
-    user: User,
-    onClick: () -> Unit,
-    onDelete: () -> Unit
-) {
+private fun AddUserButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(56.dp).padding(bottom = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    ) {
+        Icon(Icons.Default.Add, contentDescription = null)
+        Spacer(modifier = Modifier.width(12.dp))
+        Text("NUEVO PERFIL", fontWeight = FontWeight.ExtraBold)
+    }
+}
+
+@Composable
+private fun EmptyUsersPlaceholder() {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(top = 40.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("No hay usuarios registrados", color = Color.Gray)
+    }
+}
+
+@Composable
+fun UserItem(user: User, onClick: () -> Unit, onDelete: () -> Unit) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
-                model = user.imageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                model = user.imageUri ?: User.DEFAULT_AVATAR,
                 contentDescription = null,
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(CircleShape),
+                modifier = Modifier.size(50.dp).clip(CircleShape),
                 contentScale = ContentScale.Crop,
-                placeholder = painterResource(id = android.R.drawable.ic_menu_gallery),
-                error = painterResource(id = android.R.drawable.ic_menu_report_image)
+                placeholder = painterResource(id = android.R.drawable.ic_menu_gallery)
             )
             
             Spacer(modifier = Modifier.width(16.dp))
             
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = user.name.ifBlank { "Sin nombre" },
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                Text(text = user.name.ifBlank { "Sin nombre" }, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(
                     text = user.alias.ifBlank { "usuario" }.let { "@$it" },
                     fontSize = 14.sp,
@@ -231,7 +178,7 @@ fun UserItem(
             if (!user.isPublic) {
                 Icon(
                     imageVector = Icons.Default.Lock,
-                    contentDescription = "Protegido",
+                    contentDescription = null,
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.secondary
                 )
@@ -239,12 +186,52 @@ fun UserItem(
             }
             
             IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Eliminar",
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
             }
         }
     }
+}
+
+@Composable
+private fun ManagementPasswordDialog(
+    userAlias: String,
+    correctPassword: String,
+    passwordInput: String,
+    passwordError: Boolean,
+    onPasswordChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onError: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Acceso Protegido") },
+        text = {
+            Column {
+                Text("Ingresa la contraseña para gestionar a @$userAlias")
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = passwordInput,
+                    onValueChange = onPasswordChange,
+                    label = { Text("Contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = passwordError,
+                    supportingText = {
+                        if (passwordError) {
+                            Text("Contraseña incorrecta", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = { if (passwordInput == correctPassword) onConfirm() else onError() }) {
+                Text("Confirmar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }

@@ -1,10 +1,12 @@
 package com.example.jaguarapp
 
-import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -22,11 +24,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.window.Dialog
 
 @Composable
 fun WelcomeScreen(
@@ -38,11 +39,7 @@ fun WelcomeScreen(
     onRegister: () -> Unit,
     onNavigateToManagement: () -> Unit
 ) {
-    val alias = activeUser.alias
-    val imageUri = activeUser.imageUri
     var startAnimation by remember { mutableStateOf(false) }
-    
-    // Estado para el diálogo de contraseña
     var showPasswordDialog by remember { mutableStateOf(false) }
     var passwordInput by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf(false) }
@@ -59,9 +56,7 @@ fun WelcomeScreen(
         label = "OffsetY"
     )
 
-    LaunchedEffect(Unit) {
-        startAnimation = true
-    }
+    LaunchedEffect(Unit) { startAnimation = true }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -74,210 +69,263 @@ fun WelcomeScreen(
                 .offset(y = offsetY)
                 .graphicsLayer(alpha = alpha)
         ) {
-            Surface(
-                modifier = Modifier
-                    .size(180.dp)
-                    .shadow(20.dp, CircleShape)
-                    .border(
-                        width = 4.dp,
-                        brush = Brush.linearGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.tertiary
-                            )
-                        ),
-                        shape = CircleShape
-                    ),
-                shape = CircleShape
-            ) {
-                AsyncImage(
-                    model = imageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-                    contentDescription = "Foto de Perfil",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(id = android.R.drawable.ic_menu_gallery),
-                    error = painterResource(id = android.R.drawable.ic_menu_report_image)
+            ProfileImageHeader(activeUser)
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            WelcomeText(activeUser.alias)
+
+            if (isUserRegistered && users.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(32.dp))
+                UserQuickSelect(
+                    users = users,
+                    activeUser = activeUser,
+                    onUserSelected = onUserSelected
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = if (alias.isNotBlank()) "¡Bienvenido, $alias!" else "¡Bienvenido, usuario!",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground
+            WelcomeActionButtons(
+                isUserRegistered = isUserRegistered,
+                activeUser = activeUser,
+                onLoginRequest = {
+                    if (!activeUser.isPublic) showPasswordDialog = true else onLogin()
+                },
+                onRegister = onRegister,
+                onNavigateToManagement = onNavigateToManagement
             )
+        }
+    }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Es genial tenerte de vuelta.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            if (isUserRegistered && users.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                LazyRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    users.forEach { user ->
-                        item {
-                            val isSelected = user.id == activeUser.id
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .width(80.dp)
-                                    .clickable { onUserSelected(user) }
-                                    .padding(4.dp)
-                            ) {
-                                Surface(
-                                    modifier = Modifier
-                                        .size(60.dp)
-                                        .border(
-                                            width = if (isSelected) 3.dp else 1.dp,
-                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                                            shape = CircleShape
-                                        ),
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.surface
-                                ) {
-                                    AsyncImage(
-                                        model = user.imageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop,
-                                        placeholder = painterResource(id = android.R.drawable.ic_menu_gallery)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = user.alias.ifBlank { "usuario" },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    maxLines = 1,
-                                    textAlign = TextAlign.Center,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        }
-                    }
-                }
+    if (showPasswordDialog) {
+        PasswordValidationDialog(
+            userAlias = activeUser.alias,
+            correctPassword = activeUser.password,
+            passwordInput = passwordInput,
+            passwordError = passwordError,
+            onPasswordChange = {
+                passwordInput = it
+                passwordError = false
+            },
+            onConfirm = {
+                showPasswordDialog = false
+                passwordInput = ""
+                onLogin()
+            },
+            onError = { passwordError = true },
+            onDismiss = {
+                showPasswordDialog = false
+                passwordInput = ""
+                passwordError = false
             }
+        )
+    }
+}
 
-            Spacer(modifier = Modifier.height(32.dp))
+@Composable
+private fun ProfileImageHeader(user: User) {
+    Surface(
+        modifier = Modifier
+            .size(180.dp)
+            .shadow(20.dp, CircleShape)
+            .border(
+                width = 4.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.tertiary
+                    )
+                ),
+                shape = CircleShape
+            ),
+        shape = CircleShape
+    ) {
+        AsyncImage(
+            model = user.imageUri ?: User.DEFAULT_AVATAR,
+            contentDescription = "Foto de Perfil",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = android.R.drawable.ic_menu_gallery),
+            error = painterResource(id = android.R.drawable.ic_menu_report_image)
+        )
+    }
+}
 
-            if (isUserRegistered) {
-                Button(
-                    onClick = {
-                        if (!activeUser.isPublic) {
-                            showPasswordDialog = true
-                        } else {
-                            onLogin()
-                        }
-                    },
+@Composable
+private fun WelcomeText(alias: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = if (alias.isNotBlank()) "¡Bienvenido, $alias!" else "¡Bienvenido!",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.ExtraBold,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Es genial tenerte de vuelta.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+private fun UserQuickSelect(
+    users: List<User>,
+    activeUser: User,
+    onUserSelected: (User) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        items(users) { user ->
+            val isSelected = user.id == activeUser.id
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .width(80.dp)
+                    .clickable { onUserSelected(user) }
+                    .padding(4.dp)
+            ) {
+                Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .shadow(8.dp, RoundedCornerShape(16.dp)),
-                    shape = RoundedCornerShape(16.dp)
+                        .size(60.dp)
+                        .border(
+                            width = if (isSelected) 3.dp else 1.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            shape = CircleShape
+                        ),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface
                 ) {
-                    Text("INICIAR SESIÓN", fontWeight = FontWeight.Bold)
+                    AsyncImage(
+                        model = user.imageUri ?: User.DEFAULT_AVATAR,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = android.R.drawable.ic_menu_gallery)
+                    )
                 }
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = user.alias.ifBlank { "usuario" },
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
             }
+        }
+    }
+}
 
+@Composable
+private fun WelcomeActionButtons(
+    isUserRegistered: Boolean,
+    activeUser: User,
+    onLoginRequest: () -> Unit,
+    onRegister: () -> Unit,
+    onNavigateToManagement: () -> Unit
+) {
+    Column {
+        if (isUserRegistered) {
             Button(
-                onClick = onRegister,
+                onClick = onLoginRequest,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .shadow(8.dp, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("CREAR NUEVO USUARIO", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = onNavigateToManagement,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(Icons.Default.Group, contentDescription = null)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("GESTIÓN DE USUARIOS", fontWeight = FontWeight.Bold)
+                Text("INICIAR SESIÓN", fontWeight = FontWeight.Bold)
             }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        Button(
+            onClick = onRegister,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .shadow(8.dp, RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text("CREAR NUEVO USUARIO", fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onNavigateToManagement,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(Icons.Default.Group, contentDescription = null)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text("GESTIÓN DE USUARIOS", fontWeight = FontWeight.Bold)
         }
     }
+}
 
-    // Diálogo de Contraseña
-    if (showPasswordDialog) {
-        AlertDialog(
-            onDismissRequest = { 
-                showPasswordDialog = false
-                passwordInput = ""
-                passwordError = false
-            },
-            title = { Text("Seguridad de Perfil") },
-            text = {
-                Column {
-                    Text("Ingresa la contraseña para @${activeUser.alias}")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    OutlinedTextField(
-                        value = passwordInput,
-                        onValueChange = { 
-                            passwordInput = it
-                            passwordError = false
-                        },
-                        label = { Text("Contraseña") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = passwordError,
-                        supportingText = {
-                            if (passwordError) {
-                                Text("Contraseña incorrecta", color = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (passwordInput == activeUser.password) {
-                            showPasswordDialog = false
-                            passwordInput = ""
-                            onLogin()
-                        } else {
-                            passwordError = true
+@Composable
+private fun PasswordValidationDialog(
+    userAlias: String,
+    correctPassword: String,
+    passwordInput: String,
+    passwordError: Boolean,
+    onPasswordChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onError: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Seguridad de Perfil") },
+        text = {
+            Column {
+                Text("Ingresa la contraseña para @$userAlias")
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = passwordInput,
+                    onValueChange = onPasswordChange,
+                    label = { Text("Contraseña") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = passwordError,
+                    supportingText = {
+                        if (passwordError) {
+                            Text("Contraseña incorrecta", color = MaterialTheme.colorScheme.error)
                         }
                     }
-                ) {
-                    Text("Entrar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPasswordDialog = false }) {
-                    Text("Cancelar")
-                }
+                )
             }
-        )
-    }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (passwordInput == correctPassword) onConfirm() else onError()
+                }
+            ) {
+                Text("Entrar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }
