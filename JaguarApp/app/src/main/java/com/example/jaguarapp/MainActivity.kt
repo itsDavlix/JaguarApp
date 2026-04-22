@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.jaguarapp.ui.theme.JaguarAppTheme
+import kotlin.collections.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,19 +28,28 @@ class MainActivity : ComponentActivity() {
 
             // Estado global para navegación y datos
             var currentScreen by remember { mutableStateOf("welcome") }
-            var users by remember { mutableStateOf(listOf<User>()) }
+            val userListState = remember { mutableStateOf(listOf<User>()) }
             var selectedUser by remember { mutableStateOf<User?>(null) }
             
+            val userList = userListState.value
+            val hasUsers = userList.isNotEmpty()
+            
             // Usuario actual para la pantalla de bienvenida (el último editado o creado)
-            val activeUser = selectedUser ?: users.lastOrNull() ?: User()
+            val activeUser = selectedUser ?: userList.lastOrNull() ?: User()
 
             JaguarAppTheme(darkTheme = darkTheme) {
                 Crossfade(targetState = currentScreen, label = "ScreenTransition") { screen ->
                     when (screen) {
                         "welcome" -> WelcomeScreen(
-                            alias = activeUser.alias,
-                            imageUri = activeUser.imageUri,
+                            users = userListState.value,
+                            activeUser = activeUser,
+                            isUserRegistered = hasUsers,
+                            onUserSelected = { selectedUser = it },
                             onLogin = { currentScreen = "home" },
+                            onRegister = {
+                                selectedUser = null
+                                currentScreen = "profile"
+                            },
                             onNavigateToManagement = { currentScreen = "management" }
                         )
                         "home" -> {
@@ -63,13 +73,13 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         "management" -> UserManagementScreen(
-                            users = users,
+                            users = userList,
                             onUserClick = { user ->
                                 selectedUser = user
                                 currentScreen = "profile"
                             },
                             onDeleteUser = { user ->
-                                users = users.filter { it.id != user.id }
+                                userListState.value = userList.filter { it.id != user.id }
                                 if (selectedUser?.id == user.id) selectedUser = null
                             },
                             onAddUser = {
@@ -83,18 +93,20 @@ class MainActivity : ComponentActivity() {
                             var tempUser by remember(userToEdit.id) { mutableStateOf(userToEdit) }
                             
                             ProfileScreen(
-                                title = if (selectedUser == null) "Nuevo Perfil" else "Mi Perfil",
+                                title = "Mi Perfil",
                                 darkTheme = darkTheme,
                                 onThemeChange = { darkTheme = it },
                                 user = tempUser,
                                 onUserChange = { tempUser = it },
                                 onSave = { 
                                     // Guardar o actualizar usuario
-                                    val index = users.indexOfFirst { it.id == tempUser.id }
-                                    users = if (index != -1) {
-                                        users.toMutableList().apply { set(index, tempUser) }
+                                    val index = userList.indexOfFirst { it.id == tempUser.id }
+                                    if (index != -1) {
+                                        val newList = userList.toMutableList()
+                                        newList[index] = tempUser
+                                        userListState.value = newList
                                     } else {
-                                        users + tempUser
+                                        userListState.value = userList + tempUser
                                     }
                                     selectedUser = tempUser
                                     currentScreen = "welcome"

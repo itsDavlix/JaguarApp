@@ -111,14 +111,13 @@ fun ProfileScreen(
 
             // MENSAJE ANIMADO
             AnimatedVisibility(
-                visible = showMessage || user.name.isEmpty(),
+                visible = showMessage,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = if (showMessage) MaterialTheme.colorScheme.primaryContainer 
-                                        else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                        containerColor = MaterialTheme.colorScheme.primaryContainer 
                     ),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
@@ -128,13 +127,13 @@ fun ProfileScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            if (showMessage) Icons.Default.CheckCircle else Icons.Default.Info,
+                            Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = if (showMessage) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = if (showMessage) displayedMessage else "Completa tu perfil para que otros te reconozcan.",
+                            text = displayedMessage,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )

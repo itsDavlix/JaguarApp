@@ -4,6 +4,9 @@ import android.net.Uri
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,11 +28,16 @@ import coil.compose.AsyncImage
 
 @Composable
 fun WelcomeScreen(
-    alias: String,
-    imageUri: Uri?,
+    users: List<User>,
+    activeUser: User,
+    isUserRegistered: Boolean,
+    onUserSelected: (User) -> Unit,
     onLogin: () -> Unit,
+    onRegister: () -> Unit,
     onNavigateToManagement: () -> Unit
 ) {
+    val alias = activeUser.alias
+    val imageUri = activeUser.imageUri
     var startAnimation by remember { mutableStateOf(false) }
     
     val alpha by animateFloatAsState(
@@ -104,17 +112,89 @@ fun WelcomeScreen(
                 textAlign = TextAlign.Center
             )
 
+            if (isUserRegistered && users.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    users.forEach { user ->
+                        item {
+                            val isSelected = user.id == activeUser.id
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .width(80.dp)
+                                    .clickable { onUserSelected(user) }
+                                    .padding(4.dp)
+                            ) {
+                                Surface(
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .border(
+                                            width = if (isSelected) 3.dp else 1.dp,
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                            shape = CircleShape
+                                        ),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surface
+                                ) {
+                                    AsyncImage(
+                                        model = user.imageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop,
+                                        placeholder = painterResource(id = android.R.drawable.ic_menu_gallery)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = user.alias.ifBlank { "usuario" },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    maxLines = 1,
+                                    textAlign = TextAlign.Center,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = onLogin,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .shadow(8.dp, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("INICIAR SESIÓN", fontWeight = FontWeight.Bold)
+            if (isUserRegistered) {
+                Button(
+                    onClick = onLogin,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(8.dp, RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text("INICIAR SESIÓN", fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Button(
+                    onClick = onRegister,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .shadow(8.dp, RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("CREAR NUEVO USUARIO", fontWeight = FontWeight.Bold)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
