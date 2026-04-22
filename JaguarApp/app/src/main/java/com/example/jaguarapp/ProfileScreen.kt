@@ -34,18 +34,29 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    darkTheme: Boolean,
+    onThemeChange: (Boolean) -> Unit,
+    name: String,
+    onNameChange: (String) -> Unit,
+    alias: String,
+    onAliasChange: (String) -> Unit,
+    email: String,
+    onEmailChange: (String) -> Unit,
+    bio: String,
+    onBioChange: (String) -> Unit,
+    isPublic: Boolean,
+    onIsPublicChange: (Boolean) -> Unit,
+    imageUri: Uri?,
+    onImageChange: (Uri?) -> Unit,
+    onBack: () -> Unit
+) {
     // ESTADOS (Manejan la interactividad)
-    var name by remember { mutableStateOf("") }
-    var alias by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var bio by remember { mutableStateOf("") }
-    var isPublic by remember { mutableStateOf(true) }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     var isSaving by remember { mutableStateOf(false) }
     var showMessage by remember { mutableStateOf(false) }
     var displayedMessage by remember { mutableStateOf("") }
@@ -53,12 +64,12 @@ fun ProfileScreen() {
     val scope = rememberCoroutineScope()
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> selectedImageUri = uri }
+        onResult = { uri -> if (uri != null) onImageChange(uri) }
     )
 
     // Animación de escala para la imagen de perfil al cambiar
     val imageScale by animateFloatAsState(
-        targetValue = if (selectedImageUri != null) 1.05f else 1f,
+        targetValue = if (imageUri != null) 1.05f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "ImageScale"
     )
@@ -67,6 +78,28 @@ fun ProfileScreen() {
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("Mi Perfil", fontWeight = FontWeight.ExtraBold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onThemeChange(!darkTheme) }) {
+                        AnimatedContent(
+                            targetState = darkTheme,
+                            transitionSpec = {
+                                fadeIn(animationSpec = tween(300)) togetherWith fadeOut(animationSpec = tween(300))
+                            },
+                            label = "ThemeIconTransition"
+                        ) { isDark ->
+                            Icon(
+                                imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                                contentDescription = "Cambiar modo",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
@@ -127,7 +160,7 @@ fun ProfileScreen() {
                     shape = CircleShape
                 ) {
                     AsyncImage(
-                        model = selectedImageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                        model = imageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
                         contentDescription = "Foto de Perfil",
                         modifier = Modifier
                             .fillMaxSize()
@@ -159,7 +192,7 @@ fun ProfileScreen() {
             // CAMPOS DE ENTRADA
             ProfileInputField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = onNameChange,
                 label = "Nombre Completo",
                 icon = Icons.Default.Person
             )
@@ -168,7 +201,7 @@ fun ProfileScreen() {
 
             ProfileInputField(
                 value = alias,
-                onValueChange = { alias = it },
+                onValueChange = onAliasChange,
                 label = "Alias / Nombre de usuario",
                 icon = Icons.Default.AlternateEmail
             )
@@ -177,7 +210,7 @@ fun ProfileScreen() {
 
             ProfileInputField(
                 value = email,
-                onValueChange = { email = it },
+                onValueChange = onEmailChange,
                 label = "Correo Electrónico",
                 icon = Icons.Default.Email
             )
@@ -186,7 +219,7 @@ fun ProfileScreen() {
 
             OutlinedTextField(
                 value = bio,
-                onValueChange = { if (it.length <= 150) bio = it },
+                onValueChange = { if (it.length <= 150) onBioChange(it) },
                 label = { Text("Biografía") },
                 placeholder = { Text("Cuéntanos algo sobre ti...") },
                 modifier = Modifier.fillMaxWidth(),
@@ -215,7 +248,7 @@ fun ProfileScreen() {
                     }
                     Switch(
                         checked = isPublic,
-                        onCheckedChange = { isPublic = it }
+                        onCheckedChange = onIsPublicChange
                     )
                 }
             }
@@ -232,8 +265,9 @@ fun ProfileScreen() {
                             isSaving = false
                             displayedMessage = "¡Perfil actualizado correctamente!"
                             showMessage = true
-                            delay(3000)
+                            delay(2000)
                             showMessage = false
+                            onBack() // Volver a la bienvenida después de guardar
                         }
                     }
                 },
