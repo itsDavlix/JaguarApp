@@ -35,10 +35,6 @@ class MainActivity : ComponentActivity() {
                         "welcome" -> WelcomeScreen(
                             alias = activeUser.alias,
                             imageUri = activeUser.imageUri,
-                            onNavigateToNewProfile = { 
-                                selectedUser = null
-                                currentScreen = "profile"
-                            },
                             onNavigateToManagement = { currentScreen = "management" }
                         )
                         "management" -> UserManagementScreen(
@@ -50,6 +46,10 @@ class MainActivity : ComponentActivity() {
                             onDeleteUser = { user ->
                                 users = users.filter { it.id != user.id }
                                 if (selectedUser?.id == user.id) selectedUser = null
+                            },
+                            onAddUser = {
+                                selectedUser = null
+                                currentScreen = "profile"
                             },
                             onBack = { currentScreen = "welcome" }
                         )

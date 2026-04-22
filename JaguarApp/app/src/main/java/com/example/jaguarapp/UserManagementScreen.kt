@@ -29,6 +29,7 @@ fun UserManagementScreen(
     users: List<User>,
     onUserClick: (User) -> Unit,
     onDeleteUser: (User) -> Unit,
+    onAddUser: () -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -43,18 +44,44 @@ fun UserManagementScreen(
             )
         }
     ) { padding ->
-        if (users.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No hay usuarios registrados", color = Color.Gray)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Button(
+                    onClick = onAddUser,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .padding(bottom = 8.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text("NUEVO PERFIL", fontWeight = FontWeight.ExtraBold)
+                }
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+
+            if (users.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 40.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No hay usuarios registrados", color = Color.Gray)
+                    }
+                }
+            } else {
                 items(users) { user ->
                     UserItem(
                         user = user,

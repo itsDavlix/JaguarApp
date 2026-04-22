@@ -27,7 +27,6 @@ import coil.compose.AsyncImage
 fun WelcomeScreen(
     alias: String,
     imageUri: Uri?,
-    onNavigateToNewProfile: () -> Unit,
     onNavigateToManagement: () -> Unit
 ) {
     var startAnimation by remember { mutableStateOf(false) }
@@ -107,27 +106,12 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(48.dp))
 
             Button(
-                onClick = onNavigateToNewProfile,
+                onClick = onNavigateToManagement,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .shadow(8.dp, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Spacer(modifier = Modifier.width(12.dp))
-                Text("NUEVO PERFIL", fontWeight = FontWeight.Bold)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = onNavigateToManagement,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
             ) {
                 Icon(Icons.Default.Group, contentDescription = null)
                 Spacer(modifier = Modifier.width(12.dp))
