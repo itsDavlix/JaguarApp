@@ -1,22 +1,17 @@
 package com.example.jaguarapp
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.jaguarapp.ui.theme.JaguarAppTheme
-
-import android.net.Uri
-import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.runtime.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,9 +49,7 @@ class MainActivity : ComponentActivity() {
                             },
                             onDeleteUser = { user ->
                                 users = users.filter { it.id != user.id }
-                                if (selectedUser?.id == user.id) {
-                                    selectedUser = null
-                                }
+                                if (selectedUser?.id == user.id) selectedUser = null
                             },
                             onBack = { currentScreen = "welcome" }
                         )
@@ -68,25 +61,15 @@ class MainActivity : ComponentActivity() {
                                 title = if (selectedUser == null) "Nuevo Perfil" else "Mi Perfil",
                                 darkTheme = darkTheme,
                                 onThemeChange = { darkTheme = it },
-                                name = tempUser.name,
-                                onNameChange = { tempUser = tempUser.copy(name = it) },
-                                alias = tempUser.alias,
-                                onAliasChange = { tempUser = tempUser.copy(alias = it) },
-                                email = tempUser.email,
-                                onEmailChange = { tempUser = tempUser.copy(email = it) },
-                                bio = tempUser.bio,
-                                onBioChange = { tempUser = tempUser.copy(bio = it) },
-                                isPublic = tempUser.isPublic,
-                                onIsPublicChange = { tempUser = tempUser.copy(isPublic = it) },
-                                imageUri = tempUser.imageUri,
-                                onImageChange = { tempUser = tempUser.copy(imageUri = it) },
+                                user = tempUser,
+                                onUserChange = { tempUser = it },
                                 onSave = { 
                                     // Guardar o actualizar usuario
                                     val index = users.indexOfFirst { it.id == tempUser.id }
-                                    if (index != -1) {
-                                        users = users.toMutableList().apply { set(index, tempUser) }
+                                    users = if (index != -1) {
+                                        users.toMutableList().apply { set(index, tempUser) }
                                     } else {
-                                        users = users + tempUser
+                                        users + tempUser
                                     }
                                     selectedUser = tempUser
                                     currentScreen = "management" 

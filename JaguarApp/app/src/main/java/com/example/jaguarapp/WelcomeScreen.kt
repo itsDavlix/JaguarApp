@@ -1,14 +1,14 @@
 package com.example.jaguarapp
 
 import android.net.Uri
-import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,9 +22,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Group
 
 @Composable
 fun WelcomeScreen(
@@ -130,7 +127,7 @@ fun WelcomeScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp)
+                border = ButtonDefaults.outlinedButtonBorder(enabled = true)
             ) {
                 Icon(Icons.Default.Group, contentDescription = null)
                 Spacer(modifier = Modifier.width(12.dp))

@@ -9,7 +9,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -102,12 +101,12 @@ fun UserItem(
             
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (user.name.isNotBlank()) user.name else "Sin nombre",
+                    text = user.name.ifBlank { "Sin nombre" },
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
                 Text(
-                    text = if (user.alias.isNotBlank()) "@${user.alias}" else "@usuario",
+                    text = user.alias.ifBlank { "usuario" }.let { "@$it" },
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.primary
                 )

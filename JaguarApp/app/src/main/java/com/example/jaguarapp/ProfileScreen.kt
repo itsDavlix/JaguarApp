@@ -43,18 +43,8 @@ fun ProfileScreen(
     title: String = "Mi Perfil",
     darkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
-    name: String,
-    onNameChange: (String) -> Unit,
-    alias: String,
-    onAliasChange: (String) -> Unit,
-    email: String,
-    onEmailChange: (String) -> Unit,
-    bio: String,
-    onBioChange: (String) -> Unit,
-    isPublic: Boolean,
-    onIsPublicChange: (Boolean) -> Unit,
-    imageUri: Uri?,
-    onImageChange: (Uri?) -> Unit,
+    user: User,
+    onUserChange: (User) -> Unit,
     onSave: () -> Unit,
     onCancel: () -> Unit
 ) {
@@ -66,12 +56,12 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> if (uri != null) onImageChange(uri) }
+        onResult = { uri -> uri?.let { onUserChange(user.copy(imageUri = it)) } }
     )
 
     // Animación de escala para la imagen de perfil al cambiar
     val imageScale by animateFloatAsState(
-        targetValue = if (imageUri != null) 1.05f else 1f,
+        targetValue = if (user.imageUri != null) 1.05f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
         label = "ImageScale"
     )
@@ -121,7 +111,7 @@ fun ProfileScreen(
 
             // MENSAJE ANIMADO
             AnimatedVisibility(
-                visible = showMessage || name.isEmpty(),
+                visible = showMessage || user.name.isEmpty(),
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
@@ -162,7 +152,7 @@ fun ProfileScreen(
                     shape = CircleShape
                 ) {
                     AsyncImage(
-                        model = imageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+                        model = user.imageUri ?: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
                         contentDescription = "Foto de Perfil",
                         modifier = Modifier
                             .fillMaxSize()
@@ -193,8 +183,8 @@ fun ProfileScreen(
 
             // CAMPOS DE ENTRADA
             ProfileInputField(
-                value = name,
-                onValueChange = onNameChange,
+                value = user.name,
+                onValueChange = { onUserChange(user.copy(name = it)) },
                 label = "Nombre Completo",
                 icon = Icons.Default.Person
             )
@@ -202,8 +192,8 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             ProfileInputField(
-                value = alias,
-                onValueChange = onAliasChange,
+                value = user.alias,
+                onValueChange = { onUserChange(user.copy(alias = it)) },
                 label = "Alias / Nombre de usuario",
                 icon = Icons.Default.AlternateEmail
             )
@@ -211,8 +201,8 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             ProfileInputField(
-                value = email,
-                onValueChange = onEmailChange,
+                value = user.email,
+                onValueChange = { onUserChange(user.copy(email = it)) },
                 label = "Correo Electrónico",
                 icon = Icons.Default.Email
             )
@@ -220,14 +210,14 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = bio,
-                onValueChange = { if (it.length <= 150) onBioChange(it) },
+                value = user.bio,
+                onValueChange = { if (it.length <= 150) onUserChange(user.copy(bio = it)) },
                 label = { Text("Biografía") },
                 placeholder = { Text("Cuéntanos algo sobre ti...") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 maxLines = 3,
-                supportingText = { Text("${bio.length}/150") },
+                supportingText = { Text("${user.bio.length}/150") },
                 leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
             )
 
@@ -249,8 +239,8 @@ fun ProfileScreen(
                         Text("Permitir que otros usuarios vean tu información.", fontSize = 12.sp, color = Color.Gray)
                     }
                     Switch(
-                        checked = isPublic,
-                        onCheckedChange = onIsPublicChange
+                        checked = user.isPublic,
+                        onCheckedChange = { onUserChange(user.copy(isPublic = it)) }
                     )
                 }
             }
@@ -260,7 +250,7 @@ fun ProfileScreen(
             // BOTÓN DE ACCIÓN PRINCIPAL
             Button(
                 onClick = {
-                    if (name.isNotBlank()) {
+                    if (user.name.isNotBlank()) {
                         scope.launch {
                             isSaving = true
                             delay(1500) // Simulación de red
@@ -278,7 +268,7 @@ fun ProfileScreen(
                     .height(56.dp)
                     .shadow(if (!isSaving) 8.dp else 0.dp, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp),
-                enabled = !isSaving && name.isNotBlank(),
+                enabled = !isSaving && user.name.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
