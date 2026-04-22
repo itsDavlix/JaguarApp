@@ -41,7 +41,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    title: String = "Mi Perfil",
+    title: String = "Nuevo Perfil",
     darkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
     user: User,
@@ -292,9 +292,11 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             // BOTÓN DE ACCIÓN PRINCIPAL
+            val isFormValid = user.name.isNotBlank() && (user.isPublic || user.password.isNotBlank())
+            
             Button(
                 onClick = {
-                    if (user.name.isNotBlank()) {
+                    if (isFormValid) {
                         scope.launch {
                             isSaving = true
                             delay(1500) // Simulación de red
@@ -310,12 +312,14 @@ fun ProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
-                    .shadow(if (!isSaving) 8.dp else 0.dp, RoundedCornerShape(16.dp)),
+                    .shadow(if (!isSaving && isFormValid) 8.dp else 0.dp, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp),
-                enabled = !isSaving && user.name.isNotBlank(),
+                enabled = !isSaving,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    containerColor = if (isFormValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                    contentColor = if (isFormValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f),
+                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
                 )
             ) {
                 AnimatedContent(targetState = isSaving, label = "ButtonContent") { saving ->
@@ -331,9 +335,18 @@ fun ProfileScreen(
                         }
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Save, contentDescription = null)
+                            Icon(
+                                imageVector = Icons.Default.Save,
+                                contentDescription = null,
+                                tint = if (isFormValid) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.6f)
+                            )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("GUARDAR CAMBIOS", fontWeight = FontWeight.ExtraBold, letterSpacing = 1.sp)
+                            Text(
+                                text = "GUARDAR CAMBIOS",
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = 1.sp,
+                                color = if (isFormValid) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.6f)
+                            )
                         }
                     }
                 }

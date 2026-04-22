@@ -89,11 +89,12 @@ class MainActivity : ComponentActivity() {
                             onBack = { currentScreen = "welcome" }
                         )
                         "profile" -> {
+                            val isEditing = selectedUser != null
                             val userToEdit = selectedUser ?: remember { User() }
                             var tempUser by remember(userToEdit.id) { mutableStateOf(userToEdit) }
                             
                             ProfileScreen(
-                                title = "Mi Perfil",
+                                title = if (isEditing) "Editar Perfil" else "Nuevo Perfil",
                                 darkTheme = darkTheme,
                                 onThemeChange = { darkTheme = it },
                                 user = tempUser,
