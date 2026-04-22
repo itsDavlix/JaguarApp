@@ -23,11 +23,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Edit
+
 @Composable
 fun WelcomeScreen(
     alias: String,
     imageUri: Uri?,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToManagement: () -> Unit
 ) {
     var startAnimation by remember { mutableStateOf(false) }
     
@@ -103,7 +107,7 @@ fun WelcomeScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             Button(
                 onClick = onNavigateToProfile,
@@ -116,6 +120,21 @@ fun WelcomeScreen(
                 Icon(Icons.Default.Edit, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("CAMBIAR DATOS DE PERFIL", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = onNavigateToManagement,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp)
+            ) {
+                Icon(Icons.Default.Group, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("GESTIONAR USUARIOS", fontWeight = FontWeight.Bold)
             }
         }
     }
