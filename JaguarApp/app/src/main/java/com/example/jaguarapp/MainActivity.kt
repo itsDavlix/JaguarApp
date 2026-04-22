@@ -40,9 +40,9 @@ class MainActivity : ComponentActivity() {
                         "welcome" -> WelcomeScreen(
                             alias = activeUser.alias,
                             imageUri = activeUser.imageUri,
-                            onNavigateToProfile = { 
-                                selectedUser = activeUser
-                                currentScreen = "profile" 
+                            onNavigateToNewProfile = { 
+                                selectedUser = null
+                                currentScreen = "profile"
                             },
                             onNavigateToManagement = { currentScreen = "management" }
                         )
@@ -58,17 +58,14 @@ class MainActivity : ComponentActivity() {
                                     selectedUser = null
                                 }
                             },
-                            onAddUser = {
-                                selectedUser = null
-                                currentScreen = "profile"
-                            },
                             onBack = { currentScreen = "welcome" }
                         )
                         "profile" -> {
-                            val userToEdit = selectedUser ?: User()
+                            val userToEdit = selectedUser ?: remember { User() }
                             var tempUser by remember(userToEdit.id) { mutableStateOf(userToEdit) }
                             
                             ProfileScreen(
+                                title = if (selectedUser == null) "Nuevo Perfil" else "Mi Perfil",
                                 darkTheme = darkTheme,
                                 onThemeChange = { darkTheme = it },
                                 name = tempUser.name,
@@ -83,7 +80,7 @@ class MainActivity : ComponentActivity() {
                                 onIsPublicChange = { tempUser = tempUser.copy(isPublic = it) },
                                 imageUri = tempUser.imageUri,
                                 onImageChange = { tempUser = tempUser.copy(imageUri = it) },
-                                onBack = { 
+                                onSave = { 
                                     // Guardar o actualizar usuario
                                     val index = users.indexOfFirst { it.id == tempUser.id }
                                     if (index != -1) {
@@ -92,7 +89,10 @@ class MainActivity : ComponentActivity() {
                                         users = users + tempUser
                                     }
                                     selectedUser = tempUser
-                                    currentScreen = "welcome" 
+                                    currentScreen = "management" 
+                                },
+                                onCancel = {
+                                    currentScreen = "management"
                                 }
                             )
                         }

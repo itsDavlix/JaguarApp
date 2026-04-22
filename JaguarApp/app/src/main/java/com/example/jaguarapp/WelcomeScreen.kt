@@ -23,14 +23,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Edit
 
 @Composable
 fun WelcomeScreen(
     alias: String,
     imageUri: Uri?,
-    onNavigateToProfile: () -> Unit,
+    onNavigateToNewProfile: () -> Unit,
     onNavigateToManagement: () -> Unit
 ) {
     var startAnimation by remember { mutableStateOf(false) }
@@ -107,19 +107,19 @@ fun WelcomeScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
             Button(
-                onClick = onNavigateToProfile,
+                onClick = onNavigateToNewProfile,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
                     .shadow(8.dp, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Icon(Icons.Default.Edit, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("CAMBIAR DATOS DE PERFIL", fontWeight = FontWeight.Bold)
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("NUEVO PERFIL", fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -133,8 +133,8 @@ fun WelcomeScreen(
                 border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp)
             ) {
                 Icon(Icons.Default.Group, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("GESTIONAR USUARIOS", fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("GESTIÓN DE USUARIO", fontWeight = FontWeight.Bold)
             }
         }
     }

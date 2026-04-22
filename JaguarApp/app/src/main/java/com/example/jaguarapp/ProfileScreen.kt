@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    title: String = "Mi Perfil",
     darkTheme: Boolean,
     onThemeChange: (Boolean) -> Unit,
     name: String,
@@ -54,7 +55,8 @@ fun ProfileScreen(
     onIsPublicChange: (Boolean) -> Unit,
     imageUri: Uri?,
     onImageChange: (Uri?) -> Unit,
-    onBack: () -> Unit
+    onSave: () -> Unit,
+    onCancel: () -> Unit
 ) {
     // ESTADOS (Manejan la interactividad)
     var isSaving by remember { mutableStateOf(false) }
@@ -77,9 +79,9 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Mi Perfil", fontWeight = FontWeight.ExtraBold) },
+                title = { Text(title, fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = onCancel) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
@@ -267,7 +269,7 @@ fun ProfileScreen(
                             showMessage = true
                             delay(2000)
                             showMessage = false
-                            onBack() // Volver a la bienvenida después de guardar
+                            onSave() // Volver a la bienvenida después de guardar
                         }
                     }
                 },

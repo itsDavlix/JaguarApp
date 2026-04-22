@@ -30,28 +30,18 @@ fun UserManagementScreen(
     users: List<User>,
     onUserClick: (User) -> Unit,
     onDeleteUser: (User) -> Unit,
-    onAddUser: () -> Unit,
     onBack: () -> Unit
 ) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Gestionar Usuarios", fontWeight = FontWeight.ExtraBold) },
+                title = { Text("Gestión de usuario", fontWeight = FontWeight.ExtraBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddUser,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Añadir Usuario")
-            }
         }
     ) { padding ->
         if (users.isEmpty()) {
