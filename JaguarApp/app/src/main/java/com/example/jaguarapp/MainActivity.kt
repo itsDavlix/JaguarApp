@@ -7,9 +7,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.jaguarapp.ui.theme.JaguarAppTheme
 
@@ -35,8 +39,29 @@ class MainActivity : ComponentActivity() {
                         "welcome" -> WelcomeScreen(
                             alias = activeUser.alias,
                             imageUri = activeUser.imageUri,
+                            onLogin = { currentScreen = "home" },
                             onNavigateToManagement = { currentScreen = "management" }
                         )
+                        "home" -> {
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text("Página Home de la aplicación", style = MaterialTheme.typography.headlineLarge)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Sorry bro app still under development",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(24.dp))
+                                Button(onClick = { currentScreen = "welcome" }) {
+                                    Text("Cerrar Sesión")
+                                }
+                            }
+                        }
                         "management" -> UserManagementScreen(
                             users = users,
                             onUserClick = { user ->
@@ -72,7 +97,7 @@ class MainActivity : ComponentActivity() {
                                         users + tempUser
                                     }
                                     selectedUser = tempUser
-                                    currentScreen = "management" 
+                                    currentScreen = "welcome"
                                 },
                                 onCancel = {
                                     currentScreen = "management"
