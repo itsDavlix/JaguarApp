@@ -70,7 +70,7 @@ fun WelcomeScreen(
             onClick = { onThemeChange(!darkTheme) },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .padding(16.dp)
+                .padding(top = 48.dp, end = 16.dp)
         ) {
             Icon(
                 imageVector = if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,

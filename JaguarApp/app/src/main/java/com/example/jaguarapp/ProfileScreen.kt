@@ -238,7 +238,16 @@ private fun ProfileFormFields(user: User, onUserChange: (User) -> Unit) {
         )
         OutlinedTextField(
             value = user.bio,
-            onValueChange = { if (it.length <= 150) onUserChange(user.copy(bio = it)) },
+            onValueChange = { newValue ->
+                if (newValue.length <= 150) {
+                    val capitalizedValue = if (newValue.isNotEmpty()) {
+                        newValue.replaceFirstChar { it.uppercaseChar() }
+                    } else {
+                        newValue
+                    }
+                    onUserChange(user.copy(bio = capitalizedValue))
+                }
+            },
             label = { Text("Biografía") },
             placeholder = { Text("Cuéntanos algo sobre ti...") },
             modifier = Modifier.fillMaxWidth(),
@@ -357,7 +366,14 @@ fun ProfileInputField(
 ) {
     OutlinedTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { newValue ->
+            val capitalizedValue = if (newValue.isNotEmpty()) {
+                newValue.replaceFirstChar { it.uppercaseChar() }
+            } else {
+                newValue
+            }
+            onValueChange(capitalizedValue)
+        },
         label = { Text(label) },
         leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
         modifier = Modifier
