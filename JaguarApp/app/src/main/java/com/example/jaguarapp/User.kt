@@ -26,8 +26,13 @@ data class User(
 ) {
     // Helper to determine if user info is sufficient for saving
     fun isValid(): Boolean {
-        val basicInfoValid = name.isNotBlank() && alias.isNotBlank()
+        val basicInfoValid = name.isNotBlank() && alias.isNotBlank() && isEmailValid()
         return if (isPublic) basicInfoValid else basicInfoValid && password.isNotBlank()
+    }
+
+    fun isEmailValid(): Boolean {
+        if (email.isBlank()) return true // Allow blank email if not mandatory, or false if it is
+        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 
     // Default image URL for placeholders

@@ -13,7 +13,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +36,8 @@ fun WelcomeScreen(
     users: List<User>,
     activeUser: User,
     isUserRegistered: Boolean,
+    darkTheme: Boolean,
+    onThemeChange: (Boolean) -> Unit,
     onUserSelected: (User) -> Unit,
     onLogin: () -> Unit,
     onRegister: () -> Unit,
@@ -59,12 +63,26 @@ fun WelcomeScreen(
     LaunchedEffect(Unit) { startAnimation = true }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxSize()
     ) {
+        // Botón de cambio de tema en la esquina superior derecha
+        IconButton(
+            onClick = { onThemeChange(!darkTheme) },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                imageVector = if (darkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                contentDescription = "Cambiar modo",
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
+                .align(Alignment.Center)
                 .padding(24.dp)
                 .offset(y = offsetY)
                 .graphicsLayer(alpha = alpha)

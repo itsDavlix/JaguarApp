@@ -23,8 +23,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val systemInDarkTheme = isSystemInDarkTheme()
-            var darkTheme by remember { mutableStateOf(systemInDarkTheme) }
+            // Modo oscuro activado por defecto (true)
+            var darkTheme by remember { mutableStateOf(true) }
 
             // Estado global para navegación y datos
             var currentScreen by remember { mutableStateOf("welcome") }
@@ -38,84 +38,91 @@ class MainActivity : ComponentActivity() {
             val activeUser = selectedUser ?: userList.lastOrNull() ?: User()
 
             JaguarAppTheme(darkTheme = darkTheme) {
-                Crossfade(targetState = currentScreen, label = "ScreenTransition") { screen ->
-                    when (screen) {
-                        "welcome" -> WelcomeScreen(
-                            users = userListState.value,
-                            activeUser = activeUser,
-                            isUserRegistered = hasUsers,
-                            onUserSelected = { selectedUser = it },
-                            onLogin = { currentScreen = "home" },
-                            onRegister = {
-                                selectedUser = null
-                                currentScreen = "profile"
-                            },
-                            onNavigateToManagement = { currentScreen = "management" }
-                        )
-                        "home" -> {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text("Página Home de la aplicación", style = MaterialTheme.typography.headlineLarge)
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Sorry bro app still under development",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Button(onClick = { currentScreen = "welcome" }) {
-                                    Text("Cerrar Sesión")
-                                }
-                            }
-                        }
-                        "management" -> UserManagementScreen(
-                            users = userList,
-                            onUserClick = { user ->
-                                selectedUser = user
-                                currentScreen = "profile"
-                            },
-                            onDeleteUser = { user ->
-                                userListState.value = userList.filter { it.id != user.id }
-                                if (selectedUser?.id == user.id) selectedUser = null
-                            },
-                            onAddUser = {
-                                selectedUser = null
-                                currentScreen = "profile"
-                            },
-                            onBack = { currentScreen = "welcome" }
-                        )
-                        "profile" -> {
-                            val isEditing = selectedUser != null
-                            val userToEdit = selectedUser ?: remember { User() }
-                            var tempUser by remember(userToEdit.id) { mutableStateOf(userToEdit) }
-                            
-                            ProfileScreen(
-                                title = if (isEditing) "Editar Perfil" else "Nuevo Perfil",
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Crossfade(targetState = currentScreen, label = "ScreenTransition") { screen ->
+                        when (screen) {
+                            "welcome" -> WelcomeScreen(
+                                users = userListState.value,
+                                activeUser = activeUser,
+                                isUserRegistered = hasUsers,
                                 darkTheme = darkTheme,
                                 onThemeChange = { darkTheme = it },
-                                user = tempUser,
-                                onUserChange = { tempUser = it },
-                                onSave = { 
-                                    // Guardar o actualizar usuario
-                                    val index = userList.indexOfFirst { it.id == tempUser.id }
-                                    if (index != -1) {
-                                        val newList = userList.toMutableList()
-                                        newList[index] = tempUser
-                                        userListState.value = newList
-                                    } else {
-                                        userListState.value = userList + tempUser
-                                    }
-                                    selectedUser = tempUser
-                                    currentScreen = "welcome"
+                                onUserSelected = { selectedUser = it },
+                                onLogin = { currentScreen = "home" },
+                                onRegister = {
+                                    selectedUser = null
+                                    currentScreen = "profile"
                                 },
-                                onCancel = {
-                                    currentScreen = "management"
-                                }
+                                onNavigateToManagement = { currentScreen = "management" }
                             )
+                            "home" -> {
+                                Column(
+                                    modifier = Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text("Página Home de la aplicación", style = MaterialTheme.typography.headlineLarge)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Sorry bro app still under development",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(24.dp))
+                                    Button(onClick = { currentScreen = "welcome" }) {
+                                        Text("Cerrar Sesión")
+                                    }
+                                }
+                            }
+                            "management" -> UserManagementScreen(
+                                users = userList,
+                                onUserClick = { user ->
+                                    selectedUser = user
+                                    currentScreen = "profile"
+                                },
+                                onDeleteUser = { user ->
+                                    userListState.value = userList.filter { it.id != user.id }
+                                    if (selectedUser?.id == user.id) selectedUser = null
+                                },
+                                onAddUser = {
+                                    selectedUser = null
+                                    currentScreen = "profile"
+                                },
+                                onBack = { currentScreen = "welcome" }
+                            )
+                            "profile" -> {
+                                val isEditing = selectedUser != null
+                                val userToEdit = selectedUser ?: remember { User() }
+                                var tempUser by remember(userToEdit.id) { mutableStateOf(userToEdit) }
+                                
+                                ProfileScreen(
+                                    title = if (isEditing) "Editar Perfil" else "Nuevo Perfil",
+                                    darkTheme = darkTheme,
+                                    onThemeChange = { darkTheme = it },
+                                    user = tempUser,
+                                    onUserChange = { tempUser = it },
+                                    onSave = { 
+                                        // Guardar o actualizar usuario
+                                        val index = userList.indexOfFirst { it.id == tempUser.id }
+                                        if (index != -1) {
+                                            val newList = userList.toMutableList()
+                                            newList[index] = tempUser
+                                            userListState.value = newList
+                                        } else {
+                                            userListState.value = userList + tempUser
+                                        }
+                                        selectedUser = tempUser
+                                        currentScreen = "welcome"
+                                    },
+                                    onCancel = {
+                                        currentScreen = "management"
+                                    }
+                                )
+                            }
                         }
                     }
                 }

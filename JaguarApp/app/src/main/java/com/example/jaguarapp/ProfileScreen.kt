@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
@@ -207,6 +208,8 @@ private fun ProfileImageSection(imageUri: Any?, onPickImage: () -> Unit) {
 
 @Composable
 private fun ProfileFormFields(user: User, onUserChange: (User) -> Unit) {
+    var emailTouched by remember { mutableStateOf(false) }
+
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         ProfileInputField(
             value = user.name,
@@ -224,7 +227,14 @@ private fun ProfileFormFields(user: User, onUserChange: (User) -> Unit) {
             value = user.email,
             onValueChange = { onUserChange(user.copy(email = it)) },
             label = "Correo Electrónico",
-            icon = Icons.Default.Email
+            icon = Icons.Default.Email,
+            isError = emailTouched && !user.isEmailValid(),
+            supportingText = if (emailTouched && !user.isEmailValid()) "Formato de correo inválido" else null,
+            onFocusChanged = { isFocused ->
+                if (!isFocused && user.email.isNotBlank()) {
+                    emailTouched = true
+                }
+            }
         )
         OutlinedTextField(
             value = user.bio,
@@ -336,14 +346,26 @@ private fun SaveButton(user: User, isSaving: Boolean, onSave: () -> Unit) {
 }
 
 @Composable
-fun ProfileInputField(value: String, onValueChange: (String) -> Unit, label: String, icon: ImageVector) {
+fun ProfileInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    icon: ImageVector,
+    isError: Boolean = false,
+    supportingText: String? = null,
+    onFocusChanged: (Boolean) -> Unit = {}
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
         leadingIcon = { Icon(icon, null, tint = MaterialTheme.colorScheme.primary) },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { onFocusChanged(it.isFocused) },
         shape = RoundedCornerShape(12.dp),
-        singleLine = true
+        singleLine = true,
+        isError = isError,
+        supportingText = supportingText?.let { { Text(it) } }
     )
 }
